@@ -439,17 +439,20 @@ void Aggregator::process_packet(const uint8_t *buf, size_t size, uint8_t wlan_id
             count_p_bad += 1;
             return;
         }
-
-        if(crypto_box_open_easy(new_session_key,
-                                ((wsession_key_t*)buf)->session_key_data, sizeof(wsession_key_t::session_key_data),
-                                ((wsession_key_t*)buf)->session_key_nonce,
-                                tx_publickey, rx_secretkey) != 0)
-        {
-            fprintf(stderr, "unable to decrypt session key\n");
-            count_p_dec_err += 1;
-            return;
+        
+        if (isEncrypt) {
+            if(crypto_box_open_easy(new_session_key,
+                                    ((wsession_key_t*)buf)->session_key_data, sizeof(wsession_key_t::session_key_data),
+                                    ((wsession_key_t*)buf)->session_key_nonce,
+                                    tx_publickey, rx_secretkey) != 0)
+            {
+                fprintf(stderr, "unable to decrypt session key\n");
+                count_p_dec_err += 1;
+                return;
+            }
+        } else {
+            memcpy(new_session_key, ((wsession_key_t*)buf)->session_key_data, sizeof(new_session_key));
         }
-
         count_p_dec_ok += 1;
 
         if (memcmp(session_key, new_session_key, sizeof(session_key)) != 0)

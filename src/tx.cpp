@@ -92,10 +92,15 @@ void Transmitter::make_session_key(void)
     randombytes_buf(session_key, sizeof(session_key));
     session_key_packet.packet_type = WFB_PACKET_KEY;
     randombytes_buf(session_key_packet.session_key_nonce, sizeof(session_key_packet.session_key_nonce));
-    if (crypto_box_easy(session_key_packet.session_key_data, session_key, sizeof(session_key),
-                        session_key_packet.session_key_nonce, rx_publickey, tx_secretkey) != 0)
-    {
-        throw runtime_error("Unable to make session key!");
+
+    if (isEncrypt) {
+        if (crypto_box_easy(session_key_packet.session_key_data, session_key, sizeof(session_key),
+                            session_key_packet.session_key_nonce, rx_publickey, tx_secretkey) != 0)
+        {
+            throw runtime_error("Unable to make session key!");
+        }
+    } else {
+       memcpy(session_key_packet.session_key_data, session_key, sizeof(session_key));
     }
 }
 
