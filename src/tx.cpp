@@ -42,9 +42,10 @@ extern "C"
 
 using namespace std;
 
-Transmitter::Transmitter(int k, int n, const string &keypair):  fec_k(k), fec_n(n), block_idx(0),
+Transmitter::Transmitter(int k, int n, const string &keypair, bool isEncrypt):  fec_k(k), fec_n(n), block_idx(0),
                                                                 fragment_idx(0),
-                                                                max_packet_size(0)
+                                                                max_packet_size(0),
+                                                                isEncrypt(isEncrypt)
 {
     fec_p = fec_new(fec_k, fec_n);
 
@@ -99,7 +100,7 @@ void Transmitter::make_session_key(void)
 }
 
 
-PcapTransmitter::PcapTransmitter(int k, int n, const string &keypair, uint8_t radio_port, const vector<string> &wlans) : Transmitter(k, n, keypair),
+PcapTransmitter::PcapTransmitter(int k, int n, const string &keypair, uint8_t radio_port, const vector<string> &wlans, bool isEncrypt) : Transmitter(k, n, keypair, isEncrypt),
                                                                                                                         radio_port(radio_port),
                                                                                                                         current_output(0),
                                                                                                                         ieee80211_seq(0)
@@ -174,13 +175,18 @@ void Transmitter::send_block_fragment(size_t packet_size)
     block_hdr->packet_type = WFB_PACKET_DATA;
     block_hdr->nonce = htobe64(((block_idx & BLOCK_IDX_MASK) << 8) + fragment_idx);
 
+    if (isEncrypt) {
     // encrypted payload
-    crypto_aead_chacha20poly1305_encrypt(ciphertext + sizeof(wblock_hdr_t), &ciphertext_len,
-                                         block[fragment_idx], packet_size,
-                                         (uint8_t*)block_hdr, sizeof(wblock_hdr_t),
-                                         NULL, (uint8_t*)(&(block_hdr->nonce)), session_key);
+        crypto_aead_chacha20poly1305_encrypt(ciphertext + sizeof(wblock_hdr_t), &ciphertext_len,
+                                                block[fragment_idx], packet_size,
+                                                (uint8_t*)block_hdr, sizeof(wblock_hdr_t),
+                                                NULL, (uint8_t*)(&(block_hdr->nonce)), session_key);
 
-    inject_packet(ciphertext, sizeof(wblock_hdr_t) + ciphertext_len);
+        inject_packet(ciphertext, sizeof(wblock_hdr_t) + ciphertext_len);
+    } else {
+        memcpy(ciphertext + sizeof(wblock_hdr_t), block[fragment_idx], packet_size);
+        inject_packet(ciphertext, sizeof(wblock_hdr_t) + packet_size);
+    }
 }
 
 void Transmitter::send_session_key(void)
@@ -301,8 +307,8 @@ int main(int argc, char * const *argv)
     int mcs_index = 1;
 
     string keypair = "tx.key";
-
-    while ((opt = getopt(argc, argv, "K:k:n:u:r:p:B:G:S:L:M:")) != -1) {
+    bool isEncrypt = false;
+    while ((opt = getopt(argc, argv, "K:k:n:u:r:p:B:G:S:L:M:e")) != -1) {
         switch (opt) {
         case 'K':
             keypair = optarg;
@@ -333,6 +339,10 @@ int main(int argc, char * const *argv)
             break;
         case 'M':
             mcs_index = atoi(optarg);
+            break;
+        case 'e':
+            isEncrypt = true;
+            fprintf(stdout, "encrypt %s\n", isEncrypt ? "true" : "false");
             break;
         default: /* '?' */
         show_usage:
@@ -410,7 +420,7 @@ int main(int argc, char * const *argv)
 #ifdef DEBUG_TX
         shared_ptr<Transmitter>t = shared_ptr<UdpTransmitter>(new UdpTransmitter(k, n, keypair, "127.0.0.1", 5601 + i));
 #else
-        shared_ptr<Transmitter>t = shared_ptr<PcapTransmitter>(new PcapTransmitter(k, n, keypair, radio_port, wlans));
+        shared_ptr<Transmitter>t = shared_ptr<PcapTransmitter>(new PcapTransmitter(k, n, keypair, radio_port, wlans, isEncrypt));
 #endif
 
         video_source(t, tx_fd);

@@ -33,6 +33,7 @@ class Transmitter
 {
 public:
     Transmitter(int k, int m, const std::string &keypair);
+    Transmitter(int k, int m, const std::string &keypair, bool isEncrypt);
     virtual ~Transmitter();
     void send_packet(const uint8_t *buf, size_t size);
     void send_session_key(void);
@@ -57,13 +58,14 @@ private:
     uint8_t rx_publickey[crypto_box_PUBLICKEYBYTES];
     uint8_t session_key[crypto_aead_chacha20poly1305_KEYBYTES];
     wsession_key_t session_key_packet;
+    bool isEncrypt;
 };
 
 
 class PcapTransmitter : public Transmitter
 {
 public:
-    PcapTransmitter(int k, int m, const std::string &keypair, uint8_t radio_port, const std::vector<std::string> &wlans);
+    PcapTransmitter(int k, int m, const std::string &keypair, uint8_t radio_port, const std::vector<std::string> &wlans, bool isEncrypt);
     virtual ~PcapTransmitter();
     virtual void select_output(int idx) { current_output = idx; }
 private:
