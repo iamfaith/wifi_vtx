@@ -118,7 +118,8 @@ typedef std::unordered_map<uint64_t, antennaItem> antenna_stat_t;
 class Aggregator : public BaseAggregator
 {
 public:
-    Aggregator(const std::string &client_addr, int client_port, int k, int n, const std::string &keypair);
+    //Aggregator(const std::string &client_addr, int client_port, int k, int n, const std::string &keypair);
+    Aggregator(const std::string &client_addr, int client_port, int k, int n, const std::string &keypair, bool isEncrypt);
     ~Aggregator();
     virtual void process_packet(const uint8_t *buf, size_t size, uint8_t wlan_idx, const uint8_t *antenna, const int8_t *rssi, sockaddr_in *sockaddr);
     virtual void dump_stats(FILE *fp);
@@ -150,6 +151,7 @@ private:
     uint32_t count_p_fec_recovered;
     uint32_t count_p_lost;
     uint32_t count_p_bad;
+    bool isEncrypt;
 };
 
 class Receiver

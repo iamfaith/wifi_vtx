@@ -208,9 +208,10 @@ void Receiver::loop_iter(void)
 }
 
 
-Aggregator::Aggregator(const string &client_addr, int client_port, int k, int n, const string &keypair) : fec_k(k), fec_n(n), seq(0), rx_ring_front(0), rx_ring_alloc(0), last_known_block((uint64_t)-1),
+Aggregator::Aggregator(const string &client_addr, int client_port, int k, int n, const string &keypair, bool isEncrypt) : fec_k(k), fec_n(n), seq(0), rx_ring_front(0), rx_ring_alloc(0), last_known_block((uint64_t)-1),
                                                                                                           count_p_all(0), count_p_dec_err(0), count_p_dec_ok(0), count_p_fec_recovered(0),
-                                                                                                          count_p_lost(0), count_p_bad(0)
+                                                                                                          count_p_lost(0), count_p_bad(0),
+                                                                                                          isEncrypt(isEncrypt)
 {
     sockfd = open_udp_socket_for_tx(client_addr, client_port);
     fec_p = fec_new(fec_k, fec_n);
@@ -480,22 +481,22 @@ void Aggregator::process_packet(const uint8_t *buf, size_t size, uint8_t wlan_id
     long long unsigned int decrypted_len;
     wblock_hdr_t *block_hdr = (wblock_hdr_t*)buf;
 
-    if (crypto_aead_chacha20poly1305_decrypt(decrypted, &decrypted_len,
-                                             NULL,
-                                             buf + sizeof(wblock_hdr_t), size - sizeof(wblock_hdr_t),
-                                             buf,
-                                             sizeof(wblock_hdr_t),
-                                             (uint8_t*)(&(block_hdr->nonce)), session_key) != 0)
-    {
-        fprintf(stderr, "unable to decrypt packet #0x%" PRIx64 "\n", be64toh(block_hdr->nonce));
-        count_p_dec_err += 1;
-        return;
-    }
+    // if (crypto_aead_chacha20poly1305_decrypt(decrypted, &decrypted_len,
+    //                                          NULL,
+    //                                          buf + sizeof(wblock_hdr_t), size - sizeof(wblock_hdr_t),
+    //                                          buf,
+    //                                          sizeof(wblock_hdr_t),
+    //                                          (uint8_t*)(&(block_hdr->nonce)), session_key) != 0)
+    // {
+    //     fprintf(stderr, "unable to decrypt packet #0x%" PRIx64 "\n", be64toh(block_hdr->nonce));
+    //     count_p_dec_err += 1;
+    //     return;
+    // }
 
     count_p_dec_ok += 1;
     log_rssi(sockaddr, wlan_idx, antenna, rssi);
 
-    assert(decrypted_len <= MAX_FEC_PAYLOAD);
+    // assert(decrypted_len <= MAX_FEC_PAYLOAD);
 
     uint64_t block_idx = be64toh(block_hdr->nonce) >> 8;
     uint8_t fragment_idx = (uint8_t)(be64toh(block_hdr->nonce) & 0xff);
@@ -526,7 +527,7 @@ void Aggregator::process_packet(const uint8_t *buf, size_t size, uint8_t wlan_id
     if (p->fragment_map[fragment_idx]) return;
 
     memset(p->fragments[fragment_idx], '\0', MAX_FEC_PAYLOAD);
-    memcpy(p->fragments[fragment_idx], decrypted, decrypted_len);
+    memcpy(p->fragments[fragment_idx], buf + sizeof(wblock_hdr_t), size - sizeof(wblock_hdr_t));
 
     p->fragment_map[fragment_idx] = 1;
     p->has_fragments += 1;
@@ -807,8 +808,8 @@ int main(int argc, char* const *argv)
     string client_addr = "127.0.0.1";
     rx_mode_t rx_mode = LOCAL;
     string keypair = "rx.key";
-
-    while ((opt = getopt(argc, argv, "K:fa:k:n:c:u:p:l:")) != -1) {
+    bool isEncrypt = true;
+    while ((opt = getopt(argc, argv, "K:fa:k:n:c:u:p:l:e")) != -1) {
         switch (opt) {
         case 'K':
             keypair = optarg;
@@ -838,6 +839,10 @@ int main(int argc, char* const *argv)
         case 'l':
             log_interval = atoi(optarg);
             break;
+        case 'e':
+            isEncrypt = false;
+            fprintf(stdout, "encrypt %s\n", isEncrypt ? "true" : "false");
+            break;
         default: /* '?' */
         show_usage:
             fprintf(stderr, "Local receiver: %s [-K rx_key] [-k RS_K] [-n RS_N] [-c client_addr] [-u client_port] [-p radio_port] [-l log_interval] interface1 [interface2] ...\n", argv[0]);
@@ -857,7 +862,7 @@ int main(int argc, char* const *argv)
 
             shared_ptr<BaseAggregator> agg;
             if(rx_mode == LOCAL){
-                agg = shared_ptr<Aggregator>(new Aggregator(client_addr, client_port, k, n, keypair));
+                agg = shared_ptr<Aggregator>(new Aggregator(client_addr, client_port, k, n, keypair, isEncrypt));
             }else{
                 agg = shared_ptr<Forwarder>(new Forwarder(client_addr, client_port));
             }
@@ -866,7 +871,7 @@ int main(int argc, char* const *argv)
         }else if(rx_mode == AGGREGATOR)
         {
             if (optind > argc) goto show_usage;
-            Aggregator agg(client_addr, client_port, k, n, keypair);
+            Aggregator agg(client_addr, client_port, k, n, keypair, isEncrypt);
 
             network_loop(srv_port, agg, log_interval);
         }else{
