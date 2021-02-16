@@ -82,7 +82,31 @@ gst-launch-1.0  filesrc location=a.mp4 ! decodebin ! videorate ! video/x-raw,fra
 
 
 ## vb
-gst-launch-1.0  filesrc location=a.mp4 ! decodebin ! videorate ! video/x-raw,framerate=30/1 ! videoscale ! video/x-raw,width=320,height=240 ! x264enc ! video/x-h264,framerate=30/1,profile=baseline ! rtph264pay ! udpsink host=192.168.31.226 port=5600
+gst-launch-1.0  filesrc location=sora-293.mp4 ! decodebin ! videorate ! video/x-raw,framerate=30/1 ! videoscale ! video/x-raw,width=320,height=240 ! x264enc ! video/x-h264,framerate=30/1,profile=baseline ! rtph264pay ! udpsink host=0.0.0.0 port=5600
 
 
 gst-launch-1.0  filesrc location=a.mp4 ! decodebin ! videorate ! video/x-raw,framerate=30/1 ! videoscale ! video/x-raw,width=960,height=540 ! omxh264enc ! video/x-h264,framerate=30/1,profile=high,target-bitrate=10000000 ! rtph264pay ! udpsink host=127.0.0.1 port=5600
+
+
+
+
+    ffmpeg -hide_banner -nostats -i sora-293.mp4 -c:v mpeg2video -f mpegts - | mbuffer -q -c -m 20000k | ffmpeg -hide_banner -nostats -re -fflags +igndts -thread_queue_size 512 -i pipe:0 -fflags +genpts [proper codec setting] -f flv rtmp://0.0.0.0/live/stream
+
+
+
+
+    gst-launch-1.0 host=35.241.102.213 port=5600 caps='application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)H264' \
+               ! rtph264depay ! avdec_h264 ! clockoverlay valignment=bottom ! autovideosink fps-update-interval=1000 sync=false
+
+
+
+
+
+ffmpeg -f dshow -i video=a.mp4 -vcodec libx264 -tune zerolatency -b 900k -f mpegts udp://0.0.0.0:5600
+
+
+ffmpeg  -i a.mp4 -vcodec libx264 -tune zerolatency -b 900k -f h264 udp://35.241.102.213:5600
+ffplay -f h264 udp://35.241.102.213:5600
+
+ffmpeg  -i a.mp4 -vcodec libx264 -tune zerolatency -b 900k -f h264 udp://127.0.0.1:5600
+ffplay -f h264 udp://127.0.0.1:5600
