@@ -15,6 +15,7 @@ iwconfig wlan1 channel 13
 
 ./wfb_rx    -c 10.0.2.2 -p 3 -u 5600 -K gs.key  wlan0mon
 
+./wfb_rx    -c 127.0.0.1 -p 3 -u 5600 -K gs.key  $rx
 
 # TX
 
