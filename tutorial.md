@@ -45,6 +45,7 @@ raspivid -n  -ex fixedfps -w 720 -h 480 -b 0 -qp 40 -fps 50 -vf -hf -t 0 -o - | 
 
 > -e for encryption
 
+./wfb_tx  -p 3 -u 5600 -K drone.key  wlan1
 
 # mac
 ```
