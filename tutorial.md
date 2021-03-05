@@ -27,6 +27,16 @@ gst-launch-1.0  filesrc location=a.mp4 ! decodebin ! videorate ! video/x-raw,fra
 raspivid -n  -ex fixedfps -w 960 -h 540 -b 1000000 -fps 40 -vf -hf -t 0 -o - | \
                gst-launch-1.0 -v fdsrc ! h264parse ! rtph264pay config-interval=1 pt=35 ! udpsink sync=false host=127.0.0.1 port=5600
 
+
+
+### 480P@60FPS
+raspivid -n  -ex fixedfps -w 640 -h 480 -b 1000000 -fps 60 -vf -hf -t 0 -o - | \
+               gst-launch-1.0 -v fdsrc ! h264parse ! rtph264pay config-interval=1 pt=35 ! udpsink sync=false host=192.168.31.226 port=5600
+
+
+### 1296@qp30
+raspivid -n  -ex fixedfps -w 1296 -h 730 -b 0 -qp 30 -fps 49 -vf -hf -t 0 -o - |                gst-launch-1.0 -v fdsrc ! h264parse ! rtph264pay config-interval=1 pt=35 ! udpsink sync=false host=192.168.31.226 port=5600
+
 # 480 P
 raspivid -n  -ex fixedfps -w 720 -h 480 -b 2000000 -fps 50 -vf -hf -t 0 -o - | \
                gst-launch-1.0 -v fdsrc ! h264parse ! rtph264pay config-interval=1 pt=35 ! udpsink sync=false host=127.0.0.1 port=5600
@@ -76,3 +86,30 @@ remote_port = 5600
 
 ffmpeg  -i a.mp4 -vcodec libx264 -tune zerolatency -b 900k -f h264 udp://127.0.0.1:5600
 ffplay -f h264 udp://127.0.0.1:5600
+
+
+
+
+
+
+
+https://picamera.readthedocs.io/en/release-1.13/fov.html
+
+#	Resolution	Aspect Ratio	Framerates	Video	Image	FoV	Binning
+1	1920x1080	16:9	1 < fps <= 30	x	 	Partial	None
+2	2592x1944	4:3	1 < fps <= 15	x	x	Full	None
+3	2592x1944	4:3	1/6 <= fps <= 1	x	x	Full	None
+4	1296x972	4:3	1 < fps <= 42	x	 	Full	2x2
+5	1296x730	16:9	1 < fps <= 49	x	 	Full	2x2
+6	640x480	4:3	42 < fps <= 60	x	 	Full	4x4
+7	640x480	4:3	60 < fps <= 90	x	 	Full	4x4
+On the V2 module, these are:
+
+#	Resolution	Aspect Ratio	Framerates	Video	Image	FoV	Binning
+1	1920x1080	16:9	1/10 <= fps <= 30	x	 	Partial	None
+2	3280x2464	4:3	1/10 <= fps <= 15	x	x	Full	None
+3	3280x2464	4:3	1/10 <= fps <= 15	x	x	Full	None
+4	1640x1232	4:3	1/10 <= fps <= 40	x	 	Full	2x2
+5	1640x922	16:9	1/10 <= fps <= 40	x	 	Full	2x2
+6	1280x720	16:9	40 < fps <= 90	x	 	Partial	2x2
+7	640x480	4:3	40 < fps <= 90	x	 	Partial	2x2
