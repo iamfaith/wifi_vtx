@@ -27,10 +27,12 @@ gst-launch-1.0  filesrc location=a.mp4 ! decodebin ! videorate ! video/x-raw,fra
 raspivid -n  -ex fixedfps -w 960 -h 540 -b 1000000 -fps 40 -vf -hf -t 0 -o - | \
                gst-launch-1.0 -v fdsrc ! h264parse ! rtph264pay config-interval=1 pt=35 ! udpsink sync=false host=127.0.0.1 port=5600
 
-
+### pf baseline  qp 23
+raspivid -n -pf baseline -ex fixedfps -w 640 -h 480 -qp 23 -fps 60 -vf -hf -t 0 -o - | \
+               gst-launch-1.0 -v fdsrc ! h264parse ! rtph264pay config-interval=1 pt=35 ! udpsink sync=false host=192.168.31.226 port=5600
 
 ### 480P@60FPS
-raspivid -n  -ex fixedfps -w 640 -h 480 -b 1000000 -fps 60 -vf -hf -t 0 -o - | \
+raspivid -n  -pf baseline -ex fixedfps -w 640 -h 480 -b 1000000 -fps 60 -vf -hf -t 0 -o - | \
                gst-launch-1.0 -v fdsrc ! h264parse ! rtph264pay config-interval=1 pt=35 ! udpsink sync=false host=192.168.31.226 port=5600
 
 
