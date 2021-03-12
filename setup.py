@@ -71,8 +71,8 @@ setup(
                   ('/lib/systemd/system', [
                                            'scripts/wifibroadcast.service',
                                            'scripts/wifibroadcast@.service']),
-                  ('/etc/default', ['scripts/default/wifibroadcast']),
-                  ('/etc/sysctl.d', ['scripts/98-wifibroadcast.conf'])],
+                  ('/etc/default', ['scripts/default/wfb']),
+                  ('/etc/sysctl.d', ['scripts/98-wfb.conf'])],
 
     keywords="wfb",
     author="faith",
