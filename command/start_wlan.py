@@ -4,6 +4,7 @@ from twisted.internet import reactor, defer, utils
 from twisted.python import log
 from twisted.internet import reactor
 from twisted.internet.error import ReactorNotRunning
+from protocol import TXProtocol
 
 get_wlans = " iw dev | awk '$1==\"Interface\"{print $2}'"
 down_wlan = 'ip link set {} down'
@@ -76,26 +77,36 @@ def init_wlan(wlan):
 
 def abort_on_crash(f):
 
-    log.err(f, 'Stopping reactor due to fatal error')
-    try:
-        reactor.removeAll()
-        reactor.iterate()
-        reactor.stop()
-    except ReactorNotRunning:
-        pass
+    log.err(f, 'receive an error on reactor')
+    # try:
+    #     reactor.removeAll()
+    #     reactor.iterate()
+    #     reactor.stop()
+    # except ReactorNotRunning:
+    #     pass
 
 
 def set_managed_mode(wlan):
     set_mode(wlan, managed_mode)
     show_info(wlan)
 
+def init_tx(wlan):
+    cmd = "wfb_tx {}".format(wlan).split()
+    df = TXProtocol(cmd, 'video tx').start()
+    return df
+
+def init(wlan):
+    def _init_services(_):
+        return defer.gatherResults([defer.maybeDeferred(init_tx, wlan)])\
+                    .addErrback(lambda f: f.trap(defer.FirstError) and f.value.subFailure)
+    return init_wlan(wlan).addCallback(_init_services)
 
 
 def main():
     wlan = subprocess.check_output(get_wlans, shell=True, text=True)
     wlan = wlan.strip()
     log.startLogging(sys.stdout)
-    reactor.callWhenRunning(lambda: defer.maybeDeferred(init_wlan, wlan).addErrback(abort_on_crash))
+    reactor.callWhenRunning(lambda: defer.maybeDeferred(init, wlan).addErrback(abort_on_crash))
     reactor.addSystemEventTrigger('during', 'shutdown', set_managed_mode, wlan)
     reactor.run()
 
