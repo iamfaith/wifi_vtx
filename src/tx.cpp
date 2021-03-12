@@ -54,24 +54,24 @@ Transmitter::Transmitter(int k, int n, const string &keypair, bool isEncrypt):  
     {
         block[i] = new uint8_t[MAX_FEC_PAYLOAD];
     }
-
-    FILE *fp;
-    if((fp = fopen(keypair.c_str(), "r")) == NULL)
-    {
-        throw runtime_error(string_format("Unable to open %s: %s", keypair.c_str(), strerror(errno)));
-    }
-    if (fread(tx_secretkey, crypto_box_SECRETKEYBYTES, 1, fp) != 1)
-    {
+    if (isEncrypt) {
+        FILE *fp;
+        if((fp = fopen(keypair.c_str(), "r")) == NULL)
+        {
+            throw runtime_error(string_format("Unable to open %s: %s", keypair.c_str(), strerror(errno)));
+        }
+        if (fread(tx_secretkey, crypto_box_SECRETKEYBYTES, 1, fp) != 1)
+        {
+            fclose(fp);
+            throw runtime_error(string_format("Unable to read tx secret key: %s", strerror(errno)));
+        }
+        if (fread(rx_publickey, crypto_box_PUBLICKEYBYTES, 1, fp) != 1)
+        {
+            fclose(fp);
+            throw runtime_error(string_format("Unable to read rx public key: %s", strerror(errno)));
+        }
         fclose(fp);
-        throw runtime_error(string_format("Unable to read tx secret key: %s", strerror(errno)));
     }
-    if (fread(rx_publickey, crypto_box_PUBLICKEYBYTES, 1, fp) != 1)
-    {
-        fclose(fp);
-        throw runtime_error(string_format("Unable to read rx public key: %s", strerror(errno)));
-    }
-    fclose(fp);
-
     make_session_key();
 }
 

@@ -230,23 +230,24 @@ Aggregator::Aggregator(const string &client_addr, int client_port, int k, int n,
         rx_ring[ring_idx].fragment_map = new uint8_t[fec_n];
         memset(rx_ring[ring_idx].fragment_map, '\0', fec_n * sizeof(uint8_t));
     }
-
-    FILE *fp;
-    if((fp = fopen(keypair.c_str(), "r")) == NULL)
-    {
-        throw runtime_error(string_format("Unable to open %s: %s", keypair.c_str(), strerror(errno)));
-    }
-    if (fread(rx_secretkey, crypto_box_SECRETKEYBYTES, 1, fp) != 1)
-    {
+    if (isEncrypt) { 
+        FILE *fp;
+        if((fp = fopen(keypair.c_str(), "r")) == NULL)
+        {
+            throw runtime_error(string_format("Unable to open %s: %s", keypair.c_str(), strerror(errno)));
+        }
+        if (fread(rx_secretkey, crypto_box_SECRETKEYBYTES, 1, fp) != 1)
+        {
+            fclose(fp);
+            throw runtime_error(string_format("Unable to read rx secret key: %s", strerror(errno)));
+        }
+        if (fread(tx_publickey, crypto_box_PUBLICKEYBYTES, 1, fp) != 1)
+        {
+            fclose(fp);
+            throw runtime_error(string_format("Unable to read tx public key: %s", strerror(errno)));
+        }
         fclose(fp);
-        throw runtime_error(string_format("Unable to read rx secret key: %s", strerror(errno)));
     }
-    if (fread(tx_publickey, crypto_box_PUBLICKEYBYTES, 1, fp) != 1)
-    {
-        fclose(fp);
-        throw runtime_error(string_format("Unable to read tx public key: %s", strerror(errno)));
-    }
-    fclose(fp);
 }
 
 
