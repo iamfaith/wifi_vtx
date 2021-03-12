@@ -56,18 +56,17 @@ version = os.environ.get('VERSION') or 'trunk'
 commit = os.environ.get('COMMIT')
 
 if version and commit:
-    with open('telemetry/conf/site.cfg', 'w') as fd:
+    with open('conf/site.cfg', 'w') as fd:
         fd.write("# Don't make any changes here, use local.cfg instead!\n\n[common]\nversion = %r\ncommit = %r\n" % (version, commit))
 
 setup(
     name="wfb",
     version=version,
-    packages=find_packages(exclude=["*.tests", "*.tests.*", "tests.*", "tests"]),
+    packages=find_packages(exclude=["*.tests", "*.tests.*", "tests.*", "tests", "telemetry"]),
     zip_safe=False,
     entry_points={'console_scripts': ['wfb-init=command.init_package:main',
-                                      'wfb-cli=telemetry.cli:main',
-                                      'wfb-test-latency=telemetry.latency_test:main']},
-    package_data={'telemetry.conf': ['master.cfg', 'site.cfg']},
+                                      'wfb=command.start:main']},
+    package_data={'conf': ['master.cfg', 'site.cfg']},
     data_files = [('/usr/bin', ['wfb_tx', 'wfb_rx', 'wfb_keygen']),
                   ('/lib/systemd/system', [
                                            'scripts/wifibroadcast.service',
