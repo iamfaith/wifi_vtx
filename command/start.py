@@ -1,4 +1,5 @@
-import sys, os
+import sys
+import os
 import subprocess
 from twisted.internet import reactor, defer, utils
 from twisted.python import log
@@ -15,17 +16,23 @@ info_wlan = 'iw {} info'
 channel_wlan = 'iwconfig {} channel {}'
 channel_wlan = 'iw dev {} set channel {}'
 
+kill_cmd = "ps -ef|grep -v grep|grep {}|awk '{print $2}'|xargs kill -9"
+
 monitor_mode = 'monitor otherbss fcsfail'
 managed_mode = 'type managed'
 
 
 def switch_channel(wlan, channel):
-    subprocess.check_output(channel_wlan.format(wlan, channel), shell=True, text=True)
+    subprocess.check_output(channel_wlan.format(
+        wlan, channel), shell=True, text=True)
+
 
 def show_info(wlan):
-    info = subprocess.check_output(info_wlan.format(wlan), shell=True, text=True)
+    info = subprocess.check_output(
+        info_wlan.format(wlan), shell=True, text=True)
     print(info)
     return info
+
 
 def set_mode(wlan, mode):
     subprocess.check_output(down_wlan.format(wlan), shell=True, text=True)
@@ -33,16 +40,21 @@ def set_mode(wlan, mode):
     subprocess.check_output(up_wlan.format(wlan), shell=True, text=True)
     try:
         if mode == managed_mode:
-            subprocess.check_output(power_wlan.format(wlan, '2000'), shell=True, text=True)
+            subprocess.check_output(power_wlan.format(
+                wlan, '2000'), shell=True, text=True)
         else:
-            subprocess.check_output(power_wlan.format(wlan, '3000'), shell=True, text=True)
+            subprocess.check_output(power_wlan.format(
+                wlan, '3000'), shell=True, text=True)
     except Exception as e:
         print(e)
 
+
 ht_mode = 'HT20'
+
 
 class ExecError(Exception):
     pass
+
 
 def call_and_check_rc(cmd, *args):
     def _check_rc(_args):
@@ -67,6 +79,7 @@ def call_and_check_rc(cmd, *args):
 
     return utils.getProcessOutputAndValue(cmd, args, env=os.environ).addCallbacks(_check_rc, _got_signal)
 
+
 @defer.inlineCallbacks
 def init_wlan(wlan):
     yield call_and_check_rc('ifconfig', wlan, 'down')
@@ -74,6 +87,7 @@ def init_wlan(wlan):
     yield call_and_check_rc('ifconfig', wlan, 'up')
     yield call_and_check_rc('iw', 'dev', wlan, 'set', 'channel', '13', ht_mode)
     # yield call_and_check_rc('iwconfig', wlan, 'channel', '13')
+
 
 def abort_on_crash(f):
 
@@ -86,14 +100,32 @@ def abort_on_crash(f):
     #     pass
 
 
-def set_managed_mode(wlan):
+def kill_wfb(exec):
+    try:
+        cmd = f"ps -ef|grep -v grep|grep {exec}" + "|awk '{print $2}'|xargs kill -9"
+        print(cmd)
+        subprocess.check_output(cmd, shell=True, text=True)
+    except Exception:
+        pass
+
+
+def quit(wlan):
+    kill_wfb('wfb_tx')
+    kill_wfb('wfb_rx')
     set_mode(wlan, managed_mode)
     show_info(wlan)
+    kill_wfb('wfb_tx')
+    kill_wfb('wfb_rx')
+    # reactor.removeAll()
+    # reactor.iterate()
+    # reactor.stop()
+
 
 def init_tx(wlan):
     cmd = "wfb_tx {}".format(wlan).split()
     df = TXProtocol(cmd, 'video tx').start()
     return df
+
 
 def init(wlan):
     def _init_services(_):
@@ -103,13 +135,17 @@ def init(wlan):
 
 
 def main():
+    kill_wfb('wfb_tx')
+    kill_wfb('wfb_rx')
     wlan = subprocess.check_output(get_wlans, shell=True, text=True)
     wlan = wlan.strip()
     log.startLogging(sys.stdout)
-    reactor.callWhenRunning(lambda: defer.maybeDeferred(init, wlan).addErrback(abort_on_crash))
-    reactor.addSystemEventTrigger('during', 'shutdown', set_managed_mode, wlan)
+    reactor.callWhenRunning(lambda: defer.maybeDeferred(
+        init, wlan).addErrback(abort_on_crash))
+    reactor.addSystemEventTrigger('during', 'shutdown', quit, wlan)
     reactor.run()
-
+    kill_wfb('wfb_tx')
+    kill_wfb('wfb_rx')
     # rc = exit_status()
     # log.msg('Exiting with code %d' % rc)
     # sys.exit(rc)
@@ -123,6 +159,7 @@ def test_main():
     set_mode(wlans, managed_mode)
     show_info(wlans)
     # set_mode(wlans, monitor_mode)
+
 
 if __name__ == '__main__':
     main()
