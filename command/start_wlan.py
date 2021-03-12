@@ -5,9 +5,10 @@ get_wlans = " iw dev | awk '$1==\"Interface\"{print $2}'"
 down_wlan = 'ip link set {} down'
 up_wlan = 'ip link set {} up'
 set_wlan = 'iw dev {} set {}'
-power_wlan = 'iw {} set txpower fixed {}'
+power_wlan = 'iw dev {} set txpower fixed {}'
 info_wlan = 'iw {} info'
 channel_wlan = 'iwconfig {} channel {}'
+channel_wlan = 'iw dev {} set channel {}'
 
 monitor_mode = 'monitor otherbss fcsfail'
 managed_mode = 'type managed'
