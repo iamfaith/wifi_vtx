@@ -5,7 +5,7 @@ from twisted.internet import reactor, defer, utils
 from twisted.python import log
 from twisted.internet import reactor
 from twisted.internet.error import ReactorNotRunning
-from command.protocol import TXProtocol
+from wfb.protocol import TXProtocol
 
 get_wlans = " iw dev | awk '$1==\"Interface\"{print $2}'"
 down_wlan = 'ip link set {} down'

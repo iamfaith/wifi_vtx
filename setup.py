@@ -56,7 +56,7 @@ version = os.environ.get('VERSION') or 'trunk'
 commit = os.environ.get('COMMIT')
 
 if version and commit:
-    with open('conf/site.cfg', 'w') as fd:
+    with open('wfb/conf/site.cfg', 'w') as fd:
         fd.write("# Don't make any changes here, use local.cfg instead!\n\n[common]\nversion = %r\ncommit = %r\n" % (version, commit))
 
 setup(
@@ -64,9 +64,9 @@ setup(
     version=version,
     packages=find_packages(exclude=["*.tests", "*.tests.*", "tests.*", "tests", "telemetry"]),
     zip_safe=False,
-    entry_points={'console_scripts': ['wfb-init=command.init_package:main',
-                                      'wfb=command.start:main']},
-    package_data={'conf': ['master.cfg', 'site.cfg']},
+    entry_points={'console_scripts': ['wfb-init=wfb.init_package:main',
+                                      'wfb=wfb.start:main']},
+    package_data={'wfb.conf': ['master.cfg', 'site.cfg']},
     data_files = [('/usr/bin', ['wfb_tx', 'wfb_rx', 'wfb_keygen']),
                   ('/lib/systemd/system', [
                                            'scripts/wifibroadcast.service',
