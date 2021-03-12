@@ -53,11 +53,17 @@ deb:  all_bin env
 	./env/bin/python ./setup.py --command-packages=stdeb.command bdist_deb
 	rm -rf wifibroadcast.egg-info/ wifibroadcast-$(VERSION).tar.gz
 
+release: all_bin
+		 rm -rf deb_dist
+		 python2 ./setup.py --command-packages=stdeb.command bdist_deb
+		 rm -rf wfb.egg-info/ wfb-$(VERSION).tar.gz 
+
+
 bdist: all_bin
 	rm -rf dist
 	$(PYTHON) ./setup.py bdist --plat-name linux-$(ARCH)
 	rm -rf wifibroadcast.egg-info/
 
 clean:
-	rm -rf env wfb_rx wfb_tx wfb_keygen dist deb_dist build wifibroadcast.egg-info _trial_temp *~ src/*.o
+	rm -rf env wfb_rx wfb_tx wfb_keygen dist deb_dist build *.egg-info _trial_temp *~ src/*.o *.tar.gz *key
 

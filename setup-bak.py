@@ -60,24 +60,24 @@ if version and commit:
         fd.write("# Don't make any changes here, use local.cfg instead!\n\n[common]\nversion = %r\ncommit = %r\n" % (version, commit))
 
 setup(
-    name="wfb",
+    url="http://github.com/svpcom/wifibroadcast",
+    name="wifibroadcast",
     version=version,
     packages=find_packages(exclude=["*.tests", "*.tests.*", "tests.*", "tests"]),
     zip_safe=False,
-    entry_points={'console_scripts': ['wfb-init=command.init_package:main',
-                                      'wfb-cli=telemetry.cli:main',
+    entry_points={'console_scripts': ['wfb-cli=telemetry.cli:main',
                                       'wfb-test-latency=telemetry.latency_test:main']},
     package_data={'telemetry.conf': ['master.cfg', 'site.cfg']},
     data_files = [('/usr/bin', ['wfb_tx', 'wfb_rx', 'wfb_keygen']),
-                  ('/lib/systemd/system', [
+                  ('/lib/systemd/system', ['scripts/storm32.service',
                                            'scripts/wifibroadcast.service',
                                            'scripts/wifibroadcast@.service']),
                   ('/etc/default', ['scripts/default/wifibroadcast']),
                   ('/etc/sysctl.d', ['scripts/98-wifibroadcast.conf'])],
 
-    keywords="wfb",
-    author="faith",
-    # author_email="svpcom@p2ptech.org",
-    description="broadcast video anywhere",
+    keywords="wifibroadcast",
+    author="Vasily Evseenko",
+    author_email="svpcom@p2ptech.org",
+    description="Wifibroadcast server",
     license="GPLv3",
 )

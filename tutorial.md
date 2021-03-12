@@ -1,3 +1,5 @@
+pip install stem stdeb3 setuptools future
+
 # stopwatch
 
 https://naozhong.net.cn/miaobiao/
