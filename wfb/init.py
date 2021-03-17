@@ -11,6 +11,6 @@ class InitCommand:
         # implement pip as a subprocess:
         print('pip install')
         subprocess.check_call([sys.executable, '-m', 'pip', 'install', 
-        'pyroute2', 'future', 'configparser', 'twisted'])
+        'pyroute2', 'configparser', 'twisted'])
         print('apt install')
         subprocess.check_output(apt_cmd, shell=True, text=True)
