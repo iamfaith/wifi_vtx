@@ -85,11 +85,12 @@ def call_and_check_rc(cmd, *args):
 
 
 @defer.inlineCallbacks
-def init_wlan(wlan):
-    yield call_and_check_rc('ifconfig', wlan, 'down')
-    yield call_and_check_rc('iw', 'dev', wlan, 'set', 'monitor', 'otherbss', 'fcsfail')
-    yield call_and_check_rc('ifconfig', wlan, 'up')
-    yield call_and_check_rc('iw', 'dev', wlan, 'set', 'channel', '13', ht_mode)
+def init_wlan(wlans):
+    for wlan in wlans:
+        yield call_and_check_rc('ifconfig', wlan, 'down')
+        yield call_and_check_rc('iw', 'dev', wlan, 'set', 'monitor', 'otherbss', 'fcsfail')
+        yield call_and_check_rc('ifconfig', wlan, 'up')
+        yield call_and_check_rc('iw', 'dev', wlan, 'set', 'channel', '13', ht_mode)
     # yield call_and_check_rc('iwconfig', wlan, 'channel', '13')
 
 
@@ -117,11 +118,12 @@ def kill_wfb(exec):
         pass
 
 
-def quit(wlan, cb=None):
+def quit(wlans, cb=None):
     kill_wfb('wfb_tx')
     kill_wfb('wfb_rx')
-    set_mode(wlan, managed_mode)
-    show_info(wlan)
+    for wlan in wlans:
+        set_mode(wlan, managed_mode)
+        show_info(wlan)
     kill_wfb('wfb_tx')
     kill_wfb('wfb_rx')
     if cb is not None:
@@ -132,7 +134,7 @@ def quit(wlan, cb=None):
 
 
 def init_tx(wlan):
-    cmd = "wfb_tx {}".format(wlan).split()
+    cmd = "wfb_tx {}".format(' '.join(wlan)).split()
     df = TXProtocol(cmd, 'video tx').start()
     return df
 
@@ -141,7 +143,7 @@ def init_rx(wlan):
     ant_f = AntennaFactory(None, None)
         # if cfg.stats_port:
         #     reactor.listenTCP(cfg.stats_port, ant_f
-    cmd = "wfb_rx {}".format(wlan).split()
+    cmd = "wfb_rx {}".format(' '.join(wlan)).split()
     df = RXProtocol(ant_f, cmd, 'video rx').start()
     return df
 
@@ -180,6 +182,7 @@ class Base:
 
         else:
             self.wlan = self.args.wlan
+        self.wlan = self.wlan.split()
         print(f'wlan:{self.wlan}')
         if self.args.verbose:
             log.startLogging(sys.stdout)
@@ -235,3 +238,11 @@ class RX(Base):
         reactor.run()
         kill_wfb('wfb_rx')
         self.after_execute() 
+
+
+wlan = subprocess.check_output(
+                get_wlans, shell=True, text=True)
+# wlan = """wlxccd29b58c1ff"""
+wlan = wlan.strip()
+wlans = wlan.split()
+print(' '.join(wlans))
