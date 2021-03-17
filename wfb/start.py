@@ -106,10 +106,13 @@ def abort_on_crash(f):
 
 def kill_wfb(exec):
     try:
-        cmd = f"ps -ef|grep -v grep|grep {exec}" + \
+        kill_cmd = f"ps -ef|grep -v grep|grep {exec}" + \
             "|awk '{print $2}'|xargs kill -9"
-        # print(cmd)
-        subprocess.check_output(cmd, shell=True, text=True)
+        check_cmd = f"ps -ef|grep -v grep|grep {exec}" + \
+            "|awk '{print $2}'"
+        pids = subprocess.check_output(check_cmd, shell=True, text=True)
+        if pids.strip() != '':
+            subprocess.check_output(kill_cmd, shell=True, text=True, stderr=None)
     except Exception:
         pass
 
@@ -159,8 +162,17 @@ def init_rx_service(wlan):
 
 class Base:
 
-    def init_parameter(self, argv: List):
+    def init_parameter(self, argv: List, gst_cmd=GstCmd.P480):
         self.args = self.parser.parse_args(argv)
+        if self.args.nogst == False:
+            self.monitor = Monitor(gst_cmd)
+            # def cb():
+            #     self.monitor.kill_monitor()
+            self.monitor.setDaemon(True)
+            self.monitor.start()
+        else:
+            self.monitor = None
+
         if self.args.wlan is None or self.args.wlan == "":
             self.wlan = subprocess.check_output(
                 get_wlans, shell=True, text=True)
@@ -172,6 +184,10 @@ class Base:
         if self.args.verbose:
             log.startLogging(sys.stdout)
 
+    def after_execute(self):
+        if self.monitor is not None:
+            self.monitor.kill_monitor()
+
 
 @register(name='{}.tx'.format(cmd), description='start tx')
 class TX(Base):
@@ -182,22 +198,19 @@ class TX(Base):
         self.parser.add_argument('--wlan', '-w', required=False, help='wlans')
         self.parser.add_argument('--verbose', '-v', required=False,
                                  action="store_true", default=False, help='verbose mode, print output')
-        self.monitor = Monitor(gst_cmd=GstCmd.P480)
+        self.parser.add_argument('--nogst', required=False,
+                                 action="store_true", default=False, help='do not start gst')
+        
 
     def execute(self, argv: List) -> bool:
-        self.init_parameter(argv)
-        def cb():
-            self.monitor.kill_monitor()
-        self.monitor.setDaemon(True)
-        self.monitor.start()
-
+        self.init_parameter(argv, GstCmd.P480)
         kill_wfb('wfb_tx')
         reactor.callWhenRunning(lambda: defer.maybeDeferred(
             init_tx_service, self.wlan).addErrback(abort_on_crash))
-        reactor.addSystemEventTrigger('during', 'shutdown', quit, self.wlan, cb)
+        reactor.addSystemEventTrigger('during', 'shutdown', quit, self.wlan)
         reactor.run()
         kill_wfb('wfb_tx')
-        self.monitor.kill_monitor()
+        self.after_execute()
 
 
 @register(name='{}.rx'.format(cmd), description='start rx')
@@ -208,20 +221,17 @@ class RX(Base):
         self.parser.add_argument('--wlan', '-w', required=False, help='wlans')
         self.parser.add_argument('--verbose', '-v', required=False,
                                  action="store_true", default=False, help='verbose mode, print output')
-        self.monitor = Monitor(gst_cmd=GstCmd.GROUND_GST)
+        self.parser.add_argument('--nogst', required=False,
+                                 action="store_true", default=False, help='do not start gst')
 
     def execute(self, argv: List) -> bool:
-        self.init_parameter(argv)
-        def cb():
-            self.monitor.kill_monitor()
-        self.monitor.setDaemon(True)
-        self.monitor.start()
-
+        self.init_parameter(argv, GstCmd.GROUND_GST)
+        
         kill_wfb('wfb_rx')
         reactor.callWhenRunning(lambda: defer.maybeDeferred(
             init_rx_service, self.wlan).addErrback(abort_on_crash))
         reactor.addSystemEventTrigger(
-            'during', 'shutdown', quit, self.wlan, cb)
+            'during', 'shutdown', quit, self.wlan)
         reactor.run()
         kill_wfb('wfb_rx')
-        self.monitor.kill_monitor()
+        self.after_execute() 
