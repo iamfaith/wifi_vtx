@@ -182,15 +182,22 @@ class TX(Base):
         self.parser.add_argument('--wlan', '-w', required=False, help='wlans')
         self.parser.add_argument('--verbose', '-v', required=False,
                                  action="store_true", default=False, help='verbose mode, print output')
+        self.monitor = Monitor(gst_cmd=GstCmd.P480)
 
     def execute(self, argv: List) -> bool:
         self.init_parameter(argv)
+        def cb():
+            self.monitor.kill_monitor()
+        self.monitor.setDaemon(True)
+        self.monitor.start()
+
         kill_wfb('wfb_tx')
         reactor.callWhenRunning(lambda: defer.maybeDeferred(
             init_tx_service, self.wlan).addErrback(abort_on_crash))
-        reactor.addSystemEventTrigger('during', 'shutdown', quit, self.wlan)
+        reactor.addSystemEventTrigger('during', 'shutdown', quit, self.wlan, cb)
         reactor.run()
         kill_wfb('wfb_tx')
+        self.monitor.kill_monitor()
 
 
 @register(name='{}.rx'.format(cmd), description='start rx')
