@@ -5,7 +5,11 @@ from twisted.internet import reactor, defer, utils
 from twisted.python import log
 from twisted.internet import reactor
 from twisted.internet.error import ReactorNotRunning
-from wfb.protocol import TXProtocol
+from wfb.protocol import TXProtocol, RXProtocol, AntennaFactory
+from typing import List
+from wfb import register, cmd
+import argparse
+from wfb import GstCmd, Monitor
 
 get_wlans = " iw dev | awk '$1==\"Interface\"{print $2}'"
 down_wlan = 'ip link set {} down'
@@ -102,20 +106,23 @@ def abort_on_crash(f):
 
 def kill_wfb(exec):
     try:
-        cmd = f"ps -ef|grep -v grep|grep {exec}" + "|awk '{print $2}'|xargs kill -9"
-        print(cmd)
+        cmd = f"ps -ef|grep -v grep|grep {exec}" + \
+            "|awk '{print $2}'|xargs kill -9"
+        # print(cmd)
         subprocess.check_output(cmd, shell=True, text=True)
     except Exception:
         pass
 
 
-def quit(wlan):
+def quit(wlan, cb=None):
     kill_wfb('wfb_tx')
     kill_wfb('wfb_rx')
     set_mode(wlan, managed_mode)
     show_info(wlan)
     kill_wfb('wfb_tx')
     kill_wfb('wfb_rx')
+    if cb is not None:
+        cb()
     # reactor.removeAll()
     # reactor.iterate()
     # reactor.stop()
@@ -127,39 +134,87 @@ def init_tx(wlan):
     return df
 
 
-def init(wlan):
+def init_rx(wlan):
+    ant_f = AntennaFactory(None, None)
+        # if cfg.stats_port:
+        #     reactor.listenTCP(cfg.stats_port, ant_f
+    cmd = "wfb_rx {}".format(wlan).split()
+    df = RXProtocol(ant_f, cmd, 'video rx').start()
+    return df
+
+
+def init_tx_service(wlan):
     def _init_services(_):
         return defer.gatherResults([defer.maybeDeferred(init_tx, wlan)])\
                     .addErrback(lambda f: f.trap(defer.FirstError) and f.value.subFailure)
     return init_wlan(wlan).addCallback(_init_services)
 
 
-def main():
-    kill_wfb('wfb_tx')
-    kill_wfb('wfb_rx')
-    wlan = subprocess.check_output(get_wlans, shell=True, text=True)
-    wlan = wlan.strip()
-    log.startLogging(sys.stdout)
-    reactor.callWhenRunning(lambda: defer.maybeDeferred(
-        init, wlan).addErrback(abort_on_crash))
-    reactor.addSystemEventTrigger('during', 'shutdown', quit, wlan)
-    reactor.run()
-    kill_wfb('wfb_tx')
-    kill_wfb('wfb_rx')
-    # rc = exit_status()
-    # log.msg('Exiting with code %d' % rc)
-    # sys.exit(rc)
+def init_rx_service(wlan):
+    def _init_services(_):
+        return defer.gatherResults([defer.maybeDeferred(init_rx, wlan)])\
+                    .addErrback(lambda f: f.trap(defer.FirstError) and f.value.subFailure)
+    return init_wlan(wlan).addCallback(_init_services)
 
 
-def test_main():
-    wlans = subprocess.check_output(get_wlans, shell=True, text=True)
-    wlans = wlans.strip()
-    print(wlans)
+class Base:
 
-    set_mode(wlans, managed_mode)
-    show_info(wlans)
-    # set_mode(wlans, monitor_mode)
+    def init_parameter(self, argv: List):
+        self.args = self.parser.parse_args(argv)
+        if self.args.wlan is None or self.args.wlan == "":
+            self.wlan = subprocess.check_output(
+                get_wlans, shell=True, text=True)
+            self.wlan = self.wlan.strip()
+
+        else:
+            self.wlan = self.args.wlan
+        print(f'wlan:{self.wlan}')
+        if self.args.verbose:
+            log.startLogging(sys.stdout)
 
 
-if __name__ == '__main__':
-    main()
+@register(name='{}.tx'.format(cmd), description='start tx')
+class TX(Base):
+
+    def __init__(self) -> None:
+        self.parser = argparse.ArgumentParser(
+            description=self.__class__.__doc__, prog='{} tx'.format(cmd), usage='%(prog)s', add_help=True)
+        self.parser.add_argument('--wlan', '-w', required=False, help='wlans')
+        self.parser.add_argument('--verbose', '-v', required=False,
+                                 action="store_true", default=False, help='verbose mode, print output')
+
+    def execute(self, argv: List) -> bool:
+        self.init_parameter(argv)
+        kill_wfb('wfb_tx')
+        reactor.callWhenRunning(lambda: defer.maybeDeferred(
+            init_tx_service, self.wlan).addErrback(abort_on_crash))
+        reactor.addSystemEventTrigger('during', 'shutdown', quit, self.wlan)
+        reactor.run()
+        kill_wfb('wfb_tx')
+
+
+@register(name='{}.rx'.format(cmd), description='start rx')
+class RX(Base):
+    def __init__(self) -> None:
+        self.parser = argparse.ArgumentParser(
+            description=self.__class__.__doc__, prog='{} rx'.format(cmd), usage='%(prog)s', add_help=True)
+        self.parser.add_argument('--wlan', '-w', required=False, help='wlans')
+        self.parser.add_argument('--verbose', '-v', required=False,
+                                 action="store_true", default=False, help='verbose mode, print output')
+        self.monitor = Monitor(gst_cmd=GstCmd.GROUND_GST)
+
+    def execute(self, argv: List) -> bool:
+        self.init_parameter(argv)
+        def cb():
+            self.monitor.kill_monitor()
+        self.monitor.setDaemon(True)
+        self.monitor.start()
+
+        kill_wfb('wfb_rx')
+        reactor.callWhenRunning(lambda: defer.maybeDeferred(
+            init_rx_service, self.wlan).addErrback(abort_on_crash))
+        reactor.addSystemEventTrigger(
+            'during', 'shutdown', quit, self.wlan, cb)
+        reactor.run()
+        kill_wfb('wfb_rx')
+        self.monitor.kill_monitor()

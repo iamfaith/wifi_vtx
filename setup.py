@@ -64,8 +64,7 @@ setup(
     version=version,
     packages=find_packages(exclude=["*.tests", "*.tests.*", "tests.*", "tests", "telemetry"]),
     zip_safe=False,
-    entry_points={'console_scripts': ['wfb-init=wfb.init_package:main',
-                                      'wfb=wfb.start:main']},
+    entry_points={'console_scripts': ['wfb=wfb.base:execute']},
     package_data={'wfb.conf': ['master.cfg', 'site.cfg']},
     data_files = [('/usr/bin', ['wfb_tx', 'wfb_rx', 'wfb_keygen']),
                   ('/lib/systemd/system', [
