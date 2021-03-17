@@ -91,7 +91,7 @@ def init_wlan(wlans):
         yield call_and_check_rc('iw', 'dev', wlan, 'set', 'monitor', 'otherbss', 'fcsfail')
         yield call_and_check_rc('ifconfig', wlan, 'up')
         yield call_and_check_rc('iw', 'dev', wlan, 'set', 'channel', '13', ht_mode)
-    # yield call_and_check_rc('iwconfig', wlan, 'channel', '13')
+        yield call_and_check_rc('iwconfig', wlan, 'channel', '13')
 
 
 def abort_on_crash(f):
