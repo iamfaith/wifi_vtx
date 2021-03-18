@@ -69,7 +69,7 @@ setup(
     package_data={'wfb.conf': ['master.cfg', 'site.cfg']},
     data_files = [('/usr/bin', ['wfb_tx', 'wfb_rx', 'wfb_keygen']),
                   ('/etc/wfb', ['scripts/air/480P.sh', 'scripts/air/1080P.sh', 'scripts/air/720P.sh', 'scripts/air/wfb_tx.sh']),
-                  ('/lib/systemd/system', [
+                  ('/lib/systemd/system', ['scripts/wfb_gst.service',
                                            'scripts/wfb.service',
                                            'scripts/wfb@.service']),
                   ('/etc/default', ['scripts/default/wfb']),

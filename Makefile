@@ -51,7 +51,8 @@ rpm:  all_bin env
 deb:  all_bin env
 	rm -rf deb_dist
 	./env/bin/python ./setup.py --command-packages=stdeb.command bdist_deb
-	rm -rf wifibroadcast.egg-info/ wifibroadcast-$(VERSION).tar.gz
+	rm -rf wfb.egg-info/ wfb-$(VERSION).tar.gz 
+
 
 release: all_bin
 		 rm -rf deb_dist

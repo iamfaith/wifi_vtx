@@ -1,0 +1,15 @@
+[Unit]
+Description=WFB tx gst
+PartOf=wfb.service
+ReloadPropagatedFrom=wfb.service
+
+[Service]
+Type=simple
+EnvironmentFile=/etc/default/wfb
+ExecStart=/bin/sh /etc/wfb/480P.sh
+TimeoutStopSec=5s
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=wfb.service
