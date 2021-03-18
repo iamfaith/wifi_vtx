@@ -10,6 +10,7 @@ ExecStart=/bin/sh /etc/wfb/480P.sh
 TimeoutStopSec=5s
 Restart=on-failure
 RestartSec=5s
+ExecStartPre=/bin/sleep 30
 
 [Install]
 WantedBy=wfb.service
