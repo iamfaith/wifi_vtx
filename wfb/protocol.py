@@ -177,10 +177,10 @@ class RXProtocol(ProcessProtocol):
         rc = status.value.exitCode
         log.msg('Stopped RX %s with code %s' % (self.rx_id, rc))
 
-        if rc == 0:
-            self.df.callback(str(status.value))
-        else:
-            self.df.errback(status)
+        # if rc == 0:
+        #     self.df.callback(str(status.value))
+        # else:
+        #     self.df.errback(status)
 
     def processExited(self, reason):
         print("process exited!")
@@ -219,10 +219,10 @@ class TXProtocol(ProcessProtocol):
         rc = status.value.exitCode
         log.msg('Stopped TX %s with code %s' % (self.tx_id, rc))
 
-        if rc == 0:
-            self.df.callback(str(status.value))
-        else:
-            self.df.errback(status)
+        # if rc == 0:
+        #     self.df.callback(str(status.value))
+        # else:
+        #     self.df.errback(status)
 
     def start(self):
         df = defer.maybeDeferred(reactor.spawnProcess, self, self.cmd[0], self.cmd, env=None,
