@@ -1,0 +1,1 @@
+sudo wfb tx -w wlan1 --nogst

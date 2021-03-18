@@ -15,3 +15,10 @@ telemetry/conf/site.cfg
 telemetry/conf/local.cfg
 wfb/conf/site.cfg
 wfb/conf/local.cfg
+
+env
+*.egg-info 
+_trial_temp 
+*~ src/*.o 
+*.tar.gz 
+*key

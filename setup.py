@@ -68,6 +68,7 @@ setup(
                                       'wfb-init=wfb_init.init_package:main']},
     package_data={'wfb.conf': ['master.cfg', 'site.cfg']},
     data_files = [('/usr/bin', ['wfb_tx', 'wfb_rx', 'wfb_keygen']),
+                  ('/etc/wfb', ['scripts/air/480P.sh', 'scripts/air/1080P.sh', 'scripts/air/720P.sh', 'scripts/air/wfb_tx.sh']),
                   ('/lib/systemd/system', [
                                            'scripts/wifibroadcast.service',
                                            'scripts/wifibroadcast@.service']),
