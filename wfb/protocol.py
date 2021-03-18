@@ -182,6 +182,11 @@ class RXProtocol(ProcessProtocol):
         else:
             self.df.errback(status)
 
+    def processExited(self, reason):
+        print("process exited!")
+        defer.maybeDeferred(reactor.spawnProcess, self, self.cmd[0], self.cmd, env=None,
+                                 childFDs={0: "w", 1: "r", 2: "r"})
+
     def start(self):
         df = defer.maybeDeferred(reactor.spawnProcess, self, self.cmd[0], self.cmd, env=None, childFDs={
                                  0: "w", 1: "r", 2: "r"})

@@ -8,7 +8,7 @@ import time
 
 class GstCmd(Enum):
     # 640 * 480
-    P480 = ("raspivid -n  -pf baseline -ex sports -w 640 -h 480 -b 1000000 -fps 90 -vf -hf -t 0 -o - | gst-launch-1.0 -v fdsrc ! h264parse ! rtph264pay config-interval=1 pt=35 ! udpsink sync=false host=127.0.0.1 port=5600", "raspivid")
+    P480 = ("raspivid -ss 1-n  -pf baseline -ex sports -w 640 -h 480 -b 1000000 -fps 180 -vf -hf -t 0 -o - | gst-launch-1.0 -v fdsrc ! h264parse ! rtph264pay config-interval=1 pt=35 ! udpsink sync=false host=127.0.0.1 port=5600", "raspivid")
     # 1280 * 720
     P720 = ("raspivid -n  -pf baseline -ex sports -w 1280 -h 720 -b 1000000 -fps 60 -vf -hf -t 0 -o - | gst-launch-1.0 -v fdsrc ! h264parse ! rtph264pay config-interval=1 pt=35 ! udpsink sync=false host=127.0.0.1 port=5600", "raspivid")
     P1080 = ("raspivid -n  -pf baseline -ex sports -w 1920 -h 1080 -b 1000000 -fps 30 -vf -hf -t 0 -o - | gst-launch-1.0 -v fdsrc ! h264parse ! rtph264pay config-interval=1 pt=35 ! udpsink sync=false host=127.0.0.1 port=5600", "raspivid")
@@ -54,11 +54,14 @@ class Monitor(threading.Thread):
         # start
         run_cmd(self.cmd)
         while True:
-            pids = subprocess.check_output(
-                self.check_cmd, shell=True, text=True)
-            if pids.strip() == '':
-                print('no pids, restart service')
-                run_cmd(self.cmd)
+            try:
+                pids = subprocess.check_output(
+                    self.check_cmd, shell=True, text=True)
+                if pids.strip() == '':
+                    print('no pids, restart service')
+                    run_cmd(self.cmd)
+            except Exception as e:
+                pass
             # else:
             #     print(pids)
             time.sleep(0.5)
