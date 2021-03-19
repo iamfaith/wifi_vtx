@@ -139,11 +139,11 @@ def init_tx(wlan):
     return df
 
 
-def init_rx(wlan):
+def init_rx(wlan, host, port):
     ant_f = AntennaFactory(None, None)
         # if cfg.stats_port:
         #     reactor.listenTCP(cfg.stats_port, ant_f
-    cmd = "wfb_rx {}".format(' '.join(wlan)).split()
+    cmd = "wfb_rx -c {} -u {} {}".format(host, port, ' '.join(wlan)).split()
     df = RXProtocol(ant_f, cmd, 'video rx').start()
     return df
 
@@ -155,9 +155,9 @@ def init_tx_service(wlan):
     return init_wlan(wlan).addCallback(_init_services)
 
 
-def init_rx_service(wlan):
+def init_rx_service(wlan, host, port):
     def _init_services(_):
-        return defer.gatherResults([defer.maybeDeferred(init_rx, wlan)])\
+        return defer.gatherResults([defer.maybeDeferred(init_rx, wlan, host, port)])\
                     .addErrback(lambda f: f.trap(defer.FirstError) and f.value.subFailure)
     return init_wlan(wlan).addCallback(_init_services)
 
@@ -226,13 +226,19 @@ class RX(Base):
                                  action="store_true", default=False, help='verbose mode, print output')
         self.parser.add_argument('--nogst', required=False,
                                  action="store_true", default=False, help='do not start gst')
+        self.parser.add_argument('--host', required=False, default='127.0.0.1', help='redirect host')
+        self.parser.add_argument('--port', '-p', required=False, default='5600', help='redirect port')
 
     def execute(self, argv: List) -> bool:
         self.init_parameter(argv, GstCmd.GROUND_GST)
+
+        self.host = self.args.host
+        self.port = self.args.port
         
+        log.msg(self.host, self.port)
         kill_wfb('wfb_rx')
         reactor.callWhenRunning(lambda: defer.maybeDeferred(
-            init_rx_service, self.wlan).addErrback(abort_on_crash))
+            init_rx_service, self.wlan, self.host, self.port).addErrback(abort_on_crash))
         reactor.addSystemEventTrigger(
             'during', 'shutdown', quit, self.wlan)
         reactor.run()
@@ -240,9 +246,9 @@ class RX(Base):
         self.after_execute() 
 
 
-wlan = subprocess.check_output(
-                get_wlans, shell=True, text=True)
-# wlan = """wlxccd29b58c1ff"""
-wlan = wlan.strip()
-wlans = wlan.split()
-print(' '.join(wlans))
+# wlan = subprocess.check_output(
+#                 get_wlans, shell=True, text=True)
+# # wlan = """wlxccd29b58c1ff"""
+# wlan = wlan.strip()
+# wlans = wlan.split()
+# print(' '.join(wlans))
