@@ -117,3 +117,17 @@ On the V2 module, these are:
 5	1640x922	16:9	1/10 <= fps <= 40	x	 	Full	2x2
 6	1280x720	16:9	40 < fps <= 90	x	 	Partial	2x2
 7	640x480	4:3	40 < fps <= 90	x	 	Partial	2x2
+
+
+
+
+ gst-launch-1.0 udpsrc port=5600 caps='application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)H264' \
+               ! rtph264depay ! avdec_h264_mmal ! clockoverlay valignment=bottom ! autovideosink fps-update-interval=1000 sync=false
+
+
+gst-launch-1.0 udpsrc port=5600 caps='application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)H264' \
+               ! rtph264depay ! avdec_h264 ! clockoverlay valignment=bottom ! autovideosink fps-update-interval=1000 sync=false
+
+
+
+gst-launch-1.0 videotestsrc ! autovideosink
