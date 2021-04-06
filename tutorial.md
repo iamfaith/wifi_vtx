@@ -22,7 +22,9 @@ iwconfig wlan1 channel 13
 # TX
 
 ## test video
-gst-launch-1.0  filesrc location=a.mp4 ! decodebin ! videorate ! video/x-raw,framerate=30/1 ! videoscale ! video/x-raw,width=960,height=540 ! omxh264enc ! video/x-h264,framerate=30/1,profile=high,target-bitrate=10000000 ! rtph264pay ! udpsink host=127.0.0.1 port=5600
+gst-launch-1.0  filesrc location=a.mp4 ! decodebin ! videorate ! video/x-raw,framerate=30/1 ! videoscale ! video/x-raw,width=1920,height=1080 ! omxh264enc ! video/x-h264,framerate=60/1,profile=high,target-bitrate=40000000 ! rtph264pay ! udpsink host=192.168.31.176 port=5600
+
+gst-launch-1.0  filesrc location=a.mp4 ! decodebin ! x264enc ! video/x-h264,framerate=60/1,profile=high,target-bitrate=40000000 ! rtph264pay ! udpsink host=192.168.31.176 port=5600
 
 ## camera
 
@@ -65,6 +67,11 @@ raspivid -n  -ex fixedfps -w 720 -h 480 -b 0 -qp 40 -fps 50 -vf -hf -t 0 -o - | 
 ```
  gst-launch-1.0 udpsrc port=5600 caps='application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)H264' \
                ! rtph264depay ! avdec_h264 ! clockoverlay valignment=bottom ! autovideosink fps-update-interval=1000 sync=false
+
+ gst-launch-1.0 udpsrc port=5600 caps='application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)H264' \
+               ! rtph264depay ! omxh264dec ! clockoverlay valignment=bottom ! autovideosink fps-update-interval=1000 sync=false
+
+
 
 export LIBVA_DRIVER_NAME=i965
 
@@ -131,3 +138,5 @@ gst-launch-1.0 udpsrc port=5600 caps='application/x-rtp, media=(string)video, cl
 
 
 gst-launch-1.0 videotestsrc ! autovideosink
+
+gst-launch-1.0 videotestsrc ! omxh264enc ! "video/x-h264,profile=high" ! h264parse ! matroskamux ! filesink location=output.avi
