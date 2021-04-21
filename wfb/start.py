@@ -183,6 +183,13 @@ class Base:
         else:
             self.wlan = self.args.wlan
         self.wlan = self.wlan.split()
+        new_wlan = []
+        for w in self.wlan:
+            if w == "wlan0":
+                continue
+            else:
+                new_wlan.append(w)
+        self.wlan = new_wlan
         print(f'wlan:{self.wlan}')
         if self.args.verbose:
             log.startLogging(sys.stdout)
