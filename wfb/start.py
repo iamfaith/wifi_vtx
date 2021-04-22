@@ -161,7 +161,10 @@ class Base:
             yield call_and_check_rc('ifconfig', wlan, 'down')
             yield call_and_check_rc('iw', 'dev', wlan, 'set', 'monitor', 'otherbss', 'fcsfail')
             yield call_and_check_rc('ifconfig', wlan, 'up')
-            subprocess.check_output(power_wlan.format(wlan, '3000'), shell=True, text=True)
+            try:
+                subprocess.check_output(power_wlan.format(wlan, '3000'), shell=True, text=True)
+            except:
+                pass
             yield call_and_check_rc('iw', 'dev', wlan, 'set', 'channel', channel, ht_mode)
             yield call_and_check_rc('iwconfig', wlan, 'channel', channel)
 
