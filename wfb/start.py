@@ -84,14 +84,6 @@ def call_and_check_rc(cmd, *args):
     return utils.getProcessOutputAndValue(cmd, args, env=os.environ).addCallbacks(_check_rc, _got_signal)
 
 
-@defer.inlineCallbacks
-def init_wlan(wlans):
-    for wlan in wlans:
-        yield call_and_check_rc('ifconfig', wlan, 'down')
-        yield call_and_check_rc('iw', 'dev', wlan, 'set', 'monitor', 'otherbss', 'fcsfail')
-        yield call_and_check_rc('ifconfig', wlan, 'up')
-        yield call_and_check_rc('iw', 'dev', wlan, 'set', 'channel', '13', ht_mode)
-        yield call_and_check_rc('iwconfig', wlan, 'channel', '13')
 
 
 def abort_on_crash(f):
@@ -134,12 +126,14 @@ def quit(wlans, cb=None):
 
 
 def init_tx(wlan):
+    assert len(wlan) > 0, "no wlan found!"
     cmd = "wfb_tx {}".format(' '.join(wlan)).split()
     df = TXProtocol(cmd, 'video tx').start()
     return df
 
 
 def init_rx(wlan, host, port):
+    assert len(wlan) > 0, "no wlan found!"
     ant_f = AntennaFactory(None, None)
         # if cfg.stats_port:
         #     reactor.listenTCP(cfg.stats_port, ant_f
@@ -148,21 +142,42 @@ def init_rx(wlan, host, port):
     return df
 
 
-def init_tx_service(wlan):
-    def _init_services(_):
-        return defer.gatherResults([defer.maybeDeferred(init_tx, wlan)])\
-                    .addErrback(lambda f: f.trap(defer.FirstError) and f.value.subFailure)
-    return init_wlan(wlan).addCallback(_init_services)
 
-
-def init_rx_service(wlan, host, port):
-    def _init_services(_):
-        return defer.gatherResults([defer.maybeDeferred(init_rx, wlan, host, port)])\
-                    .addErrback(lambda f: f.trap(defer.FirstError) and f.value.subFailure)
-    return init_wlan(wlan).addCallback(_init_services)
 
 
 class Base:
+
+    def get_channel(self):
+        if self.g5:
+            return "149"
+        else:
+            return "13"
+
+    @defer.inlineCallbacks
+    def init_wlan(self, wlans):
+        channel = self.get_channel()
+        print(f'use channel:{channel}')
+        for wlan in wlans:
+            yield call_and_check_rc('ifconfig', wlan, 'down')
+            yield call_and_check_rc('iw', 'dev', wlan, 'set', 'monitor', 'otherbss', 'fcsfail')
+            yield call_and_check_rc('ifconfig', wlan, 'up')
+            subprocess.check_output(power_wlan.format(wlan, '3000'), shell=True, text=True)
+            yield call_and_check_rc('iw', 'dev', wlan, 'set', 'channel', channel, ht_mode)
+            yield call_and_check_rc('iwconfig', wlan, 'channel', channel)
+
+    def init_tx_service(self, wlan):
+        def _init_services(_):
+            return defer.gatherResults([defer.maybeDeferred(init_tx, wlan)])\
+                        .addErrback(lambda f: f.trap(defer.FirstError) and f.value.subFailure)
+        return self.init_wlan(wlan).addCallback(_init_services)
+
+
+    def init_rx_service(self, wlan, host, port):
+        def _init_services(_):
+            return defer.gatherResults([defer.maybeDeferred(init_rx, wlan, host, port)])\
+                        .addErrback(lambda f: f.trap(defer.FirstError) and f.value.subFailure)
+        return self.init_wlan(wlan).addCallback(_init_services)
+
 
     def init_parameter(self, argv: List, gst_cmd=GstCmd.P480):
         self.args = self.parser.parse_args(argv)
@@ -193,6 +208,7 @@ class Base:
         print(f'wlan:{self.wlan}')
         if self.args.verbose:
             log.startLogging(sys.stdout)
+        self.g5 = self.args.g5
 
     def after_execute(self):
         if self.monitor is not None:
@@ -208,6 +224,7 @@ class TX(Base):
         self.parser.add_argument('--wlan', '-w', required=False, help='wlans')
         self.parser.add_argument('--verbose', '-v', required=False,
                                  action="store_true", default=False, help='verbose mode, print output')
+        self.parser.add_argument('--g5', required=False, action="store_true", default=False, help='use 5g wifi')
         self.parser.add_argument('--nogst', required=False,
                                  action="store_true", default=False, help='do not start gst')
         
@@ -216,7 +233,7 @@ class TX(Base):
         self.init_parameter(argv, GstCmd.P480)
         kill_wfb('wfb_tx')
         reactor.callWhenRunning(lambda: defer.maybeDeferred(
-            init_tx_service, self.wlan).addErrback(abort_on_crash))
+            self.init_tx_service, self.wlan).addErrback(abort_on_crash))
         reactor.addSystemEventTrigger('during', 'shutdown', quit, self.wlan)
         reactor.run()
         kill_wfb('wfb_tx')
@@ -235,6 +252,8 @@ class RX(Base):
                                  action="store_true", default=False, help='do not start gst')
         self.parser.add_argument('--host', required=False, default='127.0.0.1', help='redirect host')
         self.parser.add_argument('--port', '-p', required=False, default='5600', help='redirect port')
+        self.parser.add_argument('--g5', required=False, action="store_true", default=False, help='use 5g wifi')
+
 
     def execute(self, argv: List) -> bool:
         self.init_parameter(argv, GstCmd.GROUND_GST)
@@ -245,7 +264,7 @@ class RX(Base):
         log.msg(self.host, self.port)
         kill_wfb('wfb_rx')
         reactor.callWhenRunning(lambda: defer.maybeDeferred(
-            init_rx_service, self.wlan, self.host, self.port).addErrback(abort_on_crash))
+            self.init_rx_service, self.wlan, self.host, self.port).addErrback(abort_on_crash))
         reactor.addSystemEventTrigger(
             'during', 'shutdown', quit, self.wlan)
         reactor.run()
