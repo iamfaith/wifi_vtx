@@ -468,6 +468,9 @@ def init_tunnel(profile, wlans):
 def main():
     log.startLogging(sys.stdout)
     profile, wlans = 'drone', ['wlan1']#sys.argv[1], list(wlan for arg in sys.argv[2:] for wlan in arg.split())
+    if len(sys.argv) > 1:
+        profile = sys.argv[1]
+    log.msg("wlan[{}] profile[{}]".format(wlans, profile))
     reactor.callWhenRunning(lambda: defer.maybeDeferred(init, profile, wlans)\
                             .addErrback(abort_on_crash))
     reactor.run()

@@ -1,3 +1,15 @@
+lsusb
+lsusb -t
+modprobe rt2800
+modprobe rt2800usb
+iwconfig
+ifconfig
+ifconfig wlan1 down
+iw dev set wlan1 monitor otherbss
+iw dev set wlan1 monitor otherbss fcsfail
+
+open OTG storage
+
 pip install stem stdeb3 setuptools future
 
 # stopwatch
