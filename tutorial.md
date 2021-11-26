@@ -10,6 +10,9 @@ iw dev set wlan1 monitor otherbss fcsfail
 
 open OTG storage
 
+
+## need to check both side injection is working or not
+
 pip install stem stdeb3 setuptools future
 
 # stopwatch
