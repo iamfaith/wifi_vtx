@@ -425,7 +425,11 @@ def init_video(profile, wlans):
 
 def init_tunnel(profile, wlans):
     cfg = getattr(settings, '%s_tunnel' % (profile,))
-    encryptFlag = '-e' if cfg.is_encrypt else ''
+    encryptFlag = '' 
+    try:
+        encryptFlag = '-e' if cfg.is_encrypt else ''
+    except:
+        pass
     cmd_rx = ('%s -p %d -u %d -K %s -k %d -n %d %s' % \
               (os.path.join(settings.path.bin_dir, 'wfb_rx'), cfg.stream_rx,
                cfg.port_rx, os.path.join(settings.path.conf_dir, cfg.keypair), cfg.fec_k, cfg.fec_n, encryptFlag)).split() + wlans
