@@ -288,7 +288,7 @@ class TXProtocol(ProcessProtocol):
 def init_wlans(profile, wlans):
     common = getattr(settings, 'common')
     if common.set_wlan == False:
-        return True
+        return
     max_bw = 20
     try:
         max_bw = max(getattr(getattr(settings, '%s_mavlink' % profile), 'bandwidth'),
