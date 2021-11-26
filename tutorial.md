@@ -9,7 +9,10 @@ iw dev set wlan1 monitor otherbss
 iw dev set wlan1 monitor otherbss fcsfail
 
 open OTG storage
-
+iw list
+ethtool -i wlan1
+modinfo mt76x2u
+aircrack-ng --test
 
 ## need to check both side injection is working or not
 
