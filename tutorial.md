@@ -14,6 +14,8 @@ ethtool -i wlan1
 modinfo mt76x2u
 aircrack-ng --test
 
+https://www.aircrack-ng.org/doku.php?id=injection_test
+
 ## need to check both side injection is working or not
 
 pip install stem stdeb3 setuptools future
