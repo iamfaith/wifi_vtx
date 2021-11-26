@@ -76,6 +76,7 @@ def parse_config(basedir, cfg_patterns, interpolate=True):
 
     for g in cfg_patterns:
         for f in (glob.glob(os.path.join(basedir, g)) if isinstance(g, str) else [g]):
+            print('loading config file', f)
             fd = open(f) if isinstance(f, str) else f
             filename = getattr(fd, 'filename', str(fd))
 
