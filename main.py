@@ -471,7 +471,10 @@ def init_tunnel(profile, wlans):
 
 def main():
     log.startLogging(sys.stdout)
-    profile, wlans = 'drone', ['wlan1']#sys.argv[1], list(wlan for arg in sys.argv[2:] for wlan in arg.split())
+    profile, wlans = 'drone', list(wlan for arg in sys.argv[2:] for wlan in arg.split()) #sys.argv[1], 
+    if len(wlans) == 0:
+        wlans = ["wlan1"]
+        
     if len(sys.argv) > 1:
         profile = sys.argv[1]
     log.msg("wlan[{}] profile[{}]".format(wlans, profile))
