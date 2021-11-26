@@ -425,16 +425,16 @@ def init_video(profile, wlans):
 
 def init_tunnel(profile, wlans):
     cfg = getattr(settings, '%s_tunnel' % (profile,))
-
-    cmd_rx = ('%s -p %d -u %d -K %s -k %d -n %d -e' % \
+    encryptFlag = '-e' if cfg.is_encrypt else ''
+    cmd_rx = ('%s -p %d -u %d -K %s -k %d -n %d %s' % \
               (os.path.join(settings.path.bin_dir, 'wfb_rx'), cfg.stream_rx,
-               cfg.port_rx, os.path.join(settings.path.conf_dir, cfg.keypair), cfg.fec_k, cfg.fec_n)).split() + wlans
+               cfg.port_rx, os.path.join(settings.path.conf_dir, cfg.keypair), cfg.fec_k, cfg.fec_n, encryptFlag)).split() + wlans
 
-    cmd_tx = ('%s -p %d -u %d -K %s -B %d -G %s -S %d -L %d -M %d -k %d -n %d -e' % \
+    cmd_tx = ('%s -p %d -u %d -K %s -B %d -G %s -S %d -L %d -M %d -k %d -n %d %s' % \
               (os.path.join(settings.path.bin_dir, 'wfb_tx'),
                cfg.stream_tx, cfg.port_tx, os.path.join(settings.path.conf_dir, cfg.keypair),
                cfg.bandwidth, "short" if cfg.short_gi else "long", cfg.stbc, cfg.ldpc, cfg.mcs_index,
-               cfg.fec_k, cfg.fec_n)).split() + wlans
+               cfg.fec_k, cfg.fec_n, encryptFlag)).split() + wlans
 
     p_in = TUNTAPProtocol()
     p_tx_l = [UDPProxyProtocol(('127.0.0.1', cfg.port_tx + i)) for i, _ in enumerate(wlans)]
