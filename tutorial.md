@@ -160,3 +160,17 @@ gst-launch-1.0 udpsrc port=5600 caps='application/x-rtp, media=(string)video, cl
 gst-launch-1.0 videotestsrc ! autovideosink
 
 gst-launch-1.0 videotestsrc ! omxh264enc ! "video/x-h264,profile=high" ! h264parse ! matroskamux ! filesink location=output.avi
+
+
+
+## detect camera
+raspistill -o test.jpg
+
+
+sudo raspi-config
+
+vcgencmd get_camera
+
+
+iwlist wlan0 channel
+iw dev wlan0 channel
