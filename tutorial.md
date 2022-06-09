@@ -1,6 +1,7 @@
 # install 
 apt-get install gstreamer1.0-tools
 apt-get install gstreamer1.0-plugins-bad
+apt-get install gstreamer1.0-plugins-good
 
 pip install stem stdeb3 setuptools future
 
