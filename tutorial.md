@@ -1,7 +1,31 @@
+<<<<<<< HEAD
 # install 
 apt-get install gstreamer1.0-tools
 apt-get install gstreamer1.0-plugins-bad
 apt-get install gstreamer1.0-plugins-good
+
+
+
+lsusb
+lsusb -t
+modprobe rt2800
+modprobe rt2800usb
+iwconfig
+ifconfig
+ifconfig wlan1 down
+iw dev set wlan1 monitor otherbss
+iw dev set wlan1 monitor otherbss fcsfail
+
+open OTG storage
+iw list
+ethtool -i wlan1
+modinfo mt76x2u
+aircrack-ng --test
+
+https://www.aircrack-ng.org/doku.php?id=injection_test
+
+## need to check both side injection is working or not
+
 
 pip install stem stdeb3 setuptools future
 
@@ -145,3 +169,17 @@ gst-launch-1.0 udpsrc port=5600 caps='application/x-rtp, media=(string)video, cl
 gst-launch-1.0 videotestsrc ! autovideosink
 
 gst-launch-1.0 videotestsrc ! omxh264enc ! "video/x-h264,profile=high" ! h264parse ! matroskamux ! filesink location=output.avi
+
+
+
+## detect camera
+raspistill -o test.jpg
+
+
+sudo raspi-config
+
+vcgencmd get_camera
+
+
+iwlist wlan0 channel
+iw dev wlan0 channel
