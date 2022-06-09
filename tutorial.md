@@ -1,3 +1,7 @@
+# install 
+apt-get install gstreamer1.0-tools
+apt-get install gstreamer1.0-plugins-bad
+
 pip install stem stdeb3 setuptools future
 
 # stopwatch
